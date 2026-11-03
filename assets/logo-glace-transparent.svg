@@ -1,0 +1,31 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="100%" height="100%">
+  <defs>
+    <!-- Frosted Glass Gradient -->
+    <linearGradient id="frostedGlassTrans" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#FFFFFF" stop-opacity="0.92"/>
+      <stop offset="100%" stop-color="#E0FAF5" stop-opacity="0.55"/>
+    </linearGradient>
+
+    <!-- Glass Border Gradient -->
+    <linearGradient id="glassBorderTrans" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#FFFFFF" stop-opacity="1"/>
+      <stop offset="100%" stop-color="#2AD6BB" stop-opacity="0.6"/>
+    </linearGradient>
+
+    <!-- Soft diffuse shadow -->
+    <filter id="softShadowTrans" x="-30%" y="-20%" width="160%" height="150%">
+      <feDropShadow dx="0" dy="20" stdDeviation="24" flood-color="#0E423A" flood-opacity="0.35"/>
+    </filter>
+  </defs>
+
+  <!-- Vertical Frosted Glass Floating Window (SOLO LO DEL MEDIO, SIN FONDO) -->
+  <rect x="116" y="44" width="280" height="424" rx="76" fill="url(#frostedGlassTrans)" stroke="url(#glassBorderTrans)" stroke-width="5.5" filter="url(#softShadowTrans)"/>
+
+  <!-- Minimal Camera Lens -->
+  <circle cx="256" cy="246" r="82" fill="#FFFFFF" fill-opacity="0.5" stroke="#FFFFFF" stroke-opacity="0.85" stroke-width="4"/>
+  <circle cx="256" cy="246" r="38" fill="#2AD6BB"/>
+  <circle cx="269" cy="233" r="8.5" fill="#FFFFFF" fill-opacity="0.95"/>
+
+  <!-- Status indicator dot -->
+  <circle cx="358" cy="82" r="7.5" fill="#2AD6BB" fill-opacity="0.9"/>
+</svg>
