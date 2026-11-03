@@ -1,4 +1,4 @@
-# maicol-cam
+# Maicol Cam
 
 Ventana flotante de camara web simple, ligera y sin bordes.
 
