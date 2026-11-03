@@ -38,35 +38,6 @@ Tambien podes hacer doble clic en `run.bat` para abrirla directamente sin consol
 
 ---
 
-## Controles rapidos
-
-### Mouse
-
-| Accion | Control |
-| :--- | :--- |
-| Mover la ventana | Arrastrar con clic izquierdo |
-| Cambiar tamano libre | Arrastrar los bordes o esquina |
-| Cambiar tamano proporcional | Rueda del mouse (Scroll) |
-| Zoom | Ctrl + Rueda del mouse |
-| Mover el encuadre (Pan) | Clic central o Ctrl + Clic izquierdo y arrastrar |
-| Resetear zoom y encuadre | Doble clic izquierdo |
-| Menu de opciones | Clic derecho |
-
-### Teclado
-
-| Tecla | Accion |
-| :--- | :--- |
-| M | Alternar modo espejo |
-| C | Cambiar camara |
-| S | Activar o desactivar realce de nitidez HD |
-| H | Alternar entre 1080p y 720p |
-| + / - | Zoom in / Zoom out |
-| Flechas | Mover encuadre |
-| 0 | Resetear zoom y encuadre al centro |
-| Esc | Cerrar |
-
----
-
 ## Compilar a .exe (Opcional)
 
 Si queres compilar tu propio ejecutable:

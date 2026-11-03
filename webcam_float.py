@@ -71,7 +71,6 @@ class VideoCaptureThread(QThread):
         cap = self._open_camera()
 
         while self._run_flag:
-            # Gestionar cambios dinámicos de cámara o resolución
             reopen_needed = False
             if self._pending_camera is not None:
                 self.camera_index = self._pending_camera
@@ -110,7 +109,7 @@ class FloatingCamera(QWidget):
         
         cfg = initial_config if initial_config is not None else load_config() or {}
 
-        # Configuración persistente restaurada
+        # Configuracion persistente restaurada
         self.corner_radius = cfg.get("corner_radius", corner_radius)
         self.is_circle = cfg.get("is_circle", False)
         self.mirror_mode = cfg.get("mirror_mode", True)
@@ -119,7 +118,7 @@ class FloatingCamera(QWidget):
         self.actual_res = self.target_res
         self.sharpness_boost = cfg.get("sharpness_boost", True)
 
-        # Zoom y Encuadre (Zona de la cámara)
+        # Zoom y Encuadre (Zona de la camara)
         self.zoom_factor = float(cfg.get("zoom_factor", 1.0))
         self.pan_offset_x = int(cfg.get("pan_offset_x", 0))
         self.pan_offset_y = int(cfg.get("pan_offset_y", 0))
@@ -127,7 +126,7 @@ class FloatingCamera(QWidget):
         self.pan_start_mouse = QPoint()
         self.pan_start_offset = (0, 0)
 
-        # Temporizador para guardado automático debounced (por ejemplo al arrastrar/redimensionar)
+        # Temporizador para guardado automatico debounced
         self.save_timer = QTimer(self)
         self.save_timer.setSingleShot(True)
         self.save_timer.setInterval(300)
@@ -142,7 +141,7 @@ class FloatingCamera(QWidget):
 
         self.current_qimg = None
 
-        # Configuración de ventana flotante sin bordes
+        # Configuracion de ventana flotante sin bordes
         self.setWindowFlags(
             Qt.WindowType.FramelessWindowHint |
             Qt.WindowType.WindowStaysOnTopHint
@@ -150,12 +149,12 @@ class FloatingCamera(QWidget):
         self.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground, True)
         self.setMouseTracking(True)
 
-        # Restaurar tamaño
+        # Restaurar tamano
         init_w = int(cfg.get("width", width))
         init_h = int(cfg.get("height", height))
         self.resize(init_w, init_h)
 
-        # Restaurar o calcular posición en pantalla
+        # Restaurar o calcular posicion en pantalla
         self._setup_initial_position(cfg, init_w, init_h)
 
         # Iniciar captura de video en Full HD 1080p
@@ -172,7 +171,6 @@ class FloatingCamera(QWidget):
         if "pos_x" in cfg and "pos_y" in cfg:
             saved_x = int(cfg["pos_x"])
             saved_y = int(cfg["pos_y"])
-            # Comprobar que las coordenadas caigan dentro de algún monitor conectado
             intersects_screen = False
             for screen in QApplication.screens():
                 geom = screen.geometry()
@@ -183,19 +181,16 @@ class FloatingCamera(QWidget):
                 self.move(saved_x, saved_y)
                 return
 
-        # Posición por defecto: esquina inferior derecha de la pantalla principal
         screen = QApplication.primaryScreen().availableGeometry()
         pos_x = max(20, screen.right() - w - 40)
         pos_y = max(20, screen.bottom() - h - 60)
         self.move(pos_x, pos_y)
 
     def schedule_save(self):
-        """Programa guardado automático con debounce de 300ms."""
         if hasattr(self, 'save_timer'):
             self.save_timer.start(300)
 
     def save_config(self):
-        """Guarda toda la configuración y estado inmediatamente a disco."""
         if hasattr(self, 'save_timer'):
             self.save_timer.stop()
 
@@ -251,16 +246,15 @@ class FloatingCamera(QWidget):
             base_w = w
             base_h = int(w / target_aspect)
 
-        # 2. Aplicar factor de zoom a la zona de la cámara
+        # 2. Aplicar factor de zoom a la zona de la camara
         crop_w = max(20, min(w, int(base_w / self.zoom_factor)))
         crop_h = max(20, min(h, int(base_h / self.zoom_factor)))
 
-        # 3. Posición del encuadre (Pan)
+        # 3. Posicion del encuadre (Pan)
         center_x = (w - crop_w) // 2
         center_y = (h - crop_h) // 2
 
         if self.mirror_mode:
-            # En modo espejo, proyectar el encuadre horizontal al espacio no invertido
             crop_x = int(np.clip(center_x + self.pan_offset_x, 0, w - crop_w))
             start_x = w - (crop_x + crop_w)
         else:
@@ -268,10 +262,10 @@ class FloatingCamera(QWidget):
 
         start_y = int(np.clip(center_y + self.pan_offset_y, 0, h - crop_h))
 
-        # 4. Extraer zona (slicing sin copia en espacio BGR original)
+        # 4. Extraer zona
         cropped = frame[start_y:start_y + crop_h, start_x:start_x + crop_w]
 
-        # 5. Escalar al tamaño de renderizado físico (High-DPI nativo)
+        # 5. Escalar al tamano de renderizado fisico
         if phys_w <= crop_w and phys_h <= crop_h:
             interp = cv2.INTER_AREA
         else:
@@ -279,16 +273,16 @@ class FloatingCamera(QWidget):
 
         resized = cv2.resize(cropped, (phys_w, phys_h), interpolation=interp)
 
-        # 6. Realce de nitidez HD (unsharp mask sutil y limpio)
+        # 6. Realce de nitidez HD
         if self.sharpness_boost:
             blurred = cv2.GaussianBlur(resized, (0, 0), 1.5)
             resized = cv2.addWeighted(resized, 1.25, blurred, -0.25, 0)
 
-        # 7. Volteo espejo únicamente sobre la imagen final ya ajustada
+        # 7. Volteo espejo
         if self.mirror_mode:
             resized = cv2.flip(resized, 1)
 
-        # 8. QImage nativo con DPR asignado para nitidez 1:1 en pantalla
+        # 8. QImage nativo con DPR asignado
         bytes_per_line = ch * phys_w
         qimg = QImage(resized.data, phys_w, phys_h, bytes_per_line, QImage.Format.Format_BGR888).copy()
         qimg.setDevicePixelRatio(dpr)
@@ -310,18 +304,15 @@ class FloatingCamera(QWidget):
         if self.current_qimg is not None:
             painter.drawImage(0, 0, self.current_qimg)
         else:
-            # Fondo placeholder oscuro mientras conecta la cámara
             painter.fillPath(path, QColor(25, 27, 34, 240))
             painter.setPen(QColor(220, 220, 225))
             painter.setFont(QFont("Segoe UI", 11))
-            painter.drawText(0, 0, int(w), int(h), Qt.AlignmentFlag.AlignCenter, "Conectando cámara HD...")
+            painter.drawText(0, 0, int(w), int(h), Qt.AlignmentFlag.AlignCenter, "Conectando camara HD...")
 
-        # Borde exterior estético
         painter.setClipping(False)
         painter.setPen(QColor(255, 255, 255, 60))
         painter.drawRoundedRect(QRectF(0.75, 0.75, w - 1.5, h - 1.5), radius, radius)
 
-        # Indicador de redimensionado en esquina inferior derecha
         if not self.is_circle:
             painter.setPen(QColor(255, 255, 255, 80))
             painter.drawLine(int(w - 12), int(h - 4), int(w - 4), int(h - 12))
@@ -329,7 +320,6 @@ class FloatingCamera(QWidget):
 
         painter.end()
 
-    # Detección de zonas de borde para redimensionar libremente
     def get_resize_zone(self, pos):
         w, h = self.width(), self.height()
         near_right = (w - pos.x() <= self.resize_margin)
@@ -344,7 +334,6 @@ class FloatingCamera(QWidget):
         return None
 
     def mousePressEvent(self, event):
-        # Mover la zona de la cámara (Pan / Encuadre) con Ctrl + Clic izquierdo o Clic central
         if event.button() == Qt.MouseButton.MiddleButton or (event.button() == Qt.MouseButton.LeftButton and (event.modifiers() & Qt.KeyboardModifier.ControlModifier)):
             self.panning = True
             self.pan_start_mouse = event.globalPosition().toPoint()
@@ -368,7 +357,6 @@ class FloatingCamera(QWidget):
             self.show_context_menu(event.globalPosition().toPoint())
 
     def mouseMoveEvent(self, event):
-        # 1. Panning de la zona de la cámara
         if self.panning:
             delta = event.globalPosition().toPoint() - self.pan_start_mouse
             dx = -delta.x() if self.mirror_mode else delta.x()
@@ -379,7 +367,6 @@ class FloatingCamera(QWidget):
             event.accept()
             return
 
-        # 2. Actualizar cursor según la posición
         if not (event.buttons() & Qt.MouseButton.LeftButton):
             zone = self.get_resize_zone(event.pos())
             if zone == 'corner':
@@ -391,7 +378,6 @@ class FloatingCamera(QWidget):
             else:
                 self.setCursor(QCursor(Qt.CursorShape.ArrowCursor))
 
-        # 3. Redimensionar ventana
         if self.resize_mode and (event.buttons() & Qt.MouseButton.LeftButton):
             delta = event.globalPosition().toPoint() - self.resize_start_pos
             orig = self.resize_start_geometry
@@ -409,7 +395,6 @@ class FloatingCamera(QWidget):
                 self.resize(self.width(), new_h)
             event.accept()
 
-        # 4. Mover la ventana flotante en la pantalla
         elif (event.buttons() & Qt.MouseButton.LeftButton) and not self.drag_position.isNull():
             self.move(event.globalPosition().toPoint() - self.drag_position)
             event.accept()
@@ -419,11 +404,9 @@ class FloatingCamera(QWidget):
         self.resize_mode = None
         self.drag_position = QPoint()
         self.setCursor(QCursor(Qt.CursorShape.ArrowCursor))
-        # Guardar inmediatamente la nueva posición, tamaño y encuadre
         self.save_config()
 
     def mouseDoubleClickEvent(self, event):
-        # Doble clic restaura zoom y recentra la cámara
         if event.button() == Qt.MouseButton.LeftButton:
             self.reset_pan_zoom()
             event.accept()
@@ -431,7 +414,6 @@ class FloatingCamera(QWidget):
     def wheelEvent(self, event):
         delta = event.angleDelta().y()
 
-        # Ctrl + Rueda del ratón: Zoom digital en la zona de la cámara
         if event.modifiers() & Qt.KeyboardModifier.ControlModifier:
             if delta > 0:
                 self.zoom_factor = min(4.0, self.zoom_factor + 0.15)
@@ -440,7 +422,6 @@ class FloatingCamera(QWidget):
             self.schedule_save()
             event.accept()
         else:
-            # Rueda normal: Redimensionar tamaño de la ventana
             factor = 1.08 if delta > 0 else 0.92
             aspect = self.height() / self.width()
             new_w = max(160, min(1400, int(self.width() * factor)))
@@ -492,8 +473,8 @@ class FloatingCamera(QWidget):
             }
         """)
 
-        # 1. Menú Resolución / Calidad HD
-        res_label = f"📺 Resolución HD ({self.actual_res[0]}x{self.actual_res[1]})"
+        # 1. Menu Resolucion HD
+        res_label = f"📺 Resolucion HD ({self.actual_res[0]}x{self.actual_res[1]})"
         res_menu = menu.addMenu(res_label)
 
         action_1080 = res_menu.addAction("⭐ Full HD 1080p (1920x1080)" + ("  ✓" if self.target_res == (1920, 1080) else ""))
@@ -512,17 +493,17 @@ class FloatingCamera(QWidget):
 
         menu.addSeparator()
 
-        # 2. Menú Formato del Lienzo
+        # 2. Menu Formato del Lienzo
         canvas_menu = menu.addMenu("🖼️ Formato del lienzo")
         canvas_menu.addAction("📱 Vertical 9:16 (Stories / Reels)", lambda: self.set_canvas_aspect(270, 480))
-        canvas_menu.addAction("📱 Vertical 3:4 (Retrato clásico)", lambda: self.set_canvas_aspect(315, 420))
-        canvas_menu.addAction("🖥️ Horizontal 16:9 (Webcam panorámica)", lambda: self.set_canvas_aspect(480, 270))
-        canvas_menu.addAction("🖥️ Horizontal 4:3 (Estándar)", lambda: self.set_canvas_aspect(400, 300))
+        canvas_menu.addAction("📱 Vertical 3:4 (Retrato clasico)", lambda: self.set_canvas_aspect(315, 420))
+        canvas_menu.addAction("🖥️ Horizontal 16:9 (Webcam panoramica)", lambda: self.set_canvas_aspect(480, 270))
+        canvas_menu.addAction("🖥️ Horizontal 4:3 (Estandar)", lambda: self.set_canvas_aspect(400, 300))
         canvas_menu.addAction("⏹️ Cuadrado 1:1", lambda: self.set_canvas_aspect(340, 340))
-        canvas_menu.addAction("⭕ Círculo 1:1", lambda: self.set_canvas_aspect(340, 340, is_circle=True))
+        canvas_menu.addAction("⭕ Circulo 1:1", lambda: self.set_canvas_aspect(340, 340, is_circle=True))
 
-        # 3. Menú Zona de la Cámara y Zoom
-        zoom_menu = menu.addMenu(f"🔍 Zona de cámara (Zoom: {self.zoom_factor:.1f}x)")
+        # 3. Menu Zona de la Camara y Zoom
+        zoom_menu = menu.addMenu(f"🔍 Zona de camara (Zoom: {self.zoom_factor:.1f}x)")
         zoom_menu.addAction("Zoom 1.0x (Normal)", lambda: self.set_zoom(1.0))
         zoom_menu.addAction("Zoom 1.25x", lambda: self.set_zoom(1.25))
         zoom_menu.addAction("Zoom 1.5x", lambda: self.set_zoom(1.5))
@@ -531,9 +512,9 @@ class FloatingCamera(QWidget):
         zoom_menu.addSeparator()
         zoom_menu.addAction("🎯 Centrar encuadre y resetear", self.reset_pan_zoom)
 
-        # 4. Menú Redondeo de esquinas
+        # 4. Menu Redondeo de esquinas
         corners_menu = menu.addMenu("⭕ Redondeo de esquinas")
-        corners_menu.addAction("Círculo completo", lambda: self.set_rounding_mode(circle=True))
+        corners_menu.addAction("Circulo completo", lambda: self.set_rounding_mode(circle=True))
         corners_menu.addAction("Esquinas muy redondeadas (40px)", lambda: self.set_rounding_mode(radius=40))
         corners_menu.addAction("Esquinas normales (28px)", lambda: self.set_rounding_mode(radius=28))
         corners_menu.addAction("Esquinas suaves (14px)", lambda: self.set_rounding_mode(radius=14))
@@ -541,15 +522,14 @@ class FloatingCamera(QWidget):
 
         menu.addSeparator()
 
-        # Opciones de cámara y espejo
-        cam_action = menu.addAction(f"📷 Cambiar cámara (Actual: {self.camera_index})")
+        cam_action = menu.addAction(f"📷 Cambiar camara (Actual: {self.camera_index})")
         cam_action.triggered.connect(self.toggle_camera)
 
         mirror_action = menu.addAction(f"🔄 Modo espejo: {'Activado ✓' if self.mirror_mode else 'Desactivado'}")
         mirror_action.triggered.connect(self.toggle_mirror)
 
         menu.addSeparator()
-        close_action = menu.addAction("❌ Cerrar cámara flotante")
+        close_action = menu.addAction("❌ Cerrar camara flotante")
         close_action.triggered.connect(self.close)
 
         menu.exec(global_pos)
@@ -580,42 +560,6 @@ class FloatingCamera(QWidget):
     def toggle_mirror(self):
         self.mirror_mode = not self.mirror_mode
         self.save_config()
-
-    def keyPressEvent(self, event):
-        step = 15
-        if event.key() == Qt.Key.Key_Escape:
-            self.close()
-        elif event.key() == Qt.Key.Key_C:
-            self.toggle_camera()
-        elif event.key() == Qt.Key.Key_M:
-            self.toggle_mirror()
-        elif event.key() == Qt.Key.Key_S:
-            self.toggle_sharpness()
-        elif event.key() == Qt.Key.Key_H:
-            new_res = (1280, 720) if self.target_res == (1920, 1080) else (1920, 1080)
-            self.set_resolution(*new_res)
-        # Teclas de flecha para mover el encuadre (pan)
-        elif event.key() == Qt.Key.Key_Left:
-            self.pan_offset_x -= step
-            self.schedule_save()
-        elif event.key() == Qt.Key.Key_Right:
-            self.pan_offset_x += step
-            self.schedule_save()
-        elif event.key() == Qt.Key.Key_Up:
-            self.pan_offset_y -= step
-            self.schedule_save()
-        elif event.key() == Qt.Key.Key_Down:
-            self.pan_offset_y += step
-            self.schedule_save()
-        # Teclas + y - para zoom de cámara
-        elif event.key() in (Qt.Key.Key_Plus, Qt.Key.Key_Equal):
-            self.zoom_factor = min(4.0, self.zoom_factor + 0.2)
-            self.schedule_save()
-        elif event.key() in (Qt.Key.Key_Minus, Qt.Key.Key_Underscore):
-            self.zoom_factor = max(1.0, self.zoom_factor - 0.2)
-            self.schedule_save()
-        elif event.key() == Qt.Key.Key_0:
-            self.reset_pan_zoom()
 
     def closeEvent(self, event):
         self.save_config()
