@@ -17,7 +17,11 @@ from PyQt6.QtWidgets import QApplication, QWidget, QMenu
 
 def get_config_path():
     home_dir = os.path.expanduser("~")
-    return os.path.join(home_dir, "camara_flotante_config.json")
+    old_path = os.path.join(home_dir, "camara_flotante_config.json")
+    new_path = os.path.join(home_dir, "maicol_cam_config.json")
+    if not os.path.exists(new_path) and os.path.exists(old_path):
+        return old_path
+    return new_path
 
 def load_config():
     cfg_path = get_config_path()
@@ -140,6 +144,8 @@ class FloatingCamera(QWidget):
         self.resize_margin = 16
 
         self.current_qimg = None
+
+        self.setWindowTitle("Maicol Cam")
 
         # Configuracion de ventana flotante sin bordes
         self.setWindowFlags(
@@ -307,7 +313,7 @@ class FloatingCamera(QWidget):
             painter.fillPath(path, QColor(25, 27, 34, 240))
             painter.setPen(QColor(220, 220, 225))
             painter.setFont(QFont("Segoe UI", 11))
-            painter.drawText(0, 0, int(w), int(h), Qt.AlignmentFlag.AlignCenter, "Conectando camara HD...")
+            painter.drawText(0, 0, int(w), int(h), Qt.AlignmentFlag.AlignCenter, "Conectando Maicol Cam...")
 
         painter.setClipping(False)
         painter.setPen(QColor(255, 255, 255, 60))
@@ -524,7 +530,7 @@ class FloatingCamera(QWidget):
         mirror_action.triggered.connect(self.toggle_mirror)
 
         menu.addSeparator()
-        close_action = menu.addAction("❌ Cerrar camara flotante")
+        close_action = menu.addAction("❌ Cerrar Maicol Cam")
         close_action.triggered.connect(self.close)
 
         menu.exec(global_pos)

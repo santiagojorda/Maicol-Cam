@@ -1,4 +1,4 @@
-# Camara Flotante Minimalista
+# maicol-cam
 
 Una ventana flotante de camara web simple, ligera y sin bordes.
 
@@ -10,7 +10,7 @@ La idea de este proyecto es tener tu camara en pantalla sin ventanas pesadas, si
 
 Si solo queres usar la aplicacion sin instalar nada:
 
-👉 **[Descargar CamaraFlotante.exe](https://github.com/santiagojorda/camara-flotante/releases/latest/download/CamaraFlotante.exe)**
+👉 **[Descargar MaicolCam.exe](https://github.com/santiagojorda/maicol-cam/releases/latest/download/MaicolCam.exe)**
 
 *No requiere Python ni dependencias adicionales. Descargar y abrir.*
 
@@ -20,8 +20,8 @@ Si solo queres usar la aplicacion sin instalar nada:
 
 ### 1. Clonar el repositorio
 ```bash
-git clone https://github.com/santiagojorda/camara-flotante.git
-cd camara-flotante
+git clone https://github.com/santiagojorda/maicol-cam.git
+cd maicol-cam
 ```
 
 ### 2. Instalar dependencias
@@ -44,5 +44,5 @@ Si queres compilar tu propio ejecutable:
 
 ```bash
 pip install pyinstaller
-pyinstaller --noconfirm --clean --onefile --noconsole --icon="webcam.ico" --name "CamaraFlotante" webcam_float.py
+pyinstaller --noconfirm --clean --onefile --noconsole --icon="webcam.ico" --name "MaicolCam" webcam_float.py
 ```
