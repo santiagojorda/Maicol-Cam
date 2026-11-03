@@ -1,14 +1,14 @@
 # maicol-cam
 
-Una ventana flotante de camara web simple, ligera y sin bordes.
+Ventana flotante de camara web simple, ligera y sin bordes.
 
-La idea de este proyecto es tener tu camara en pantalla sin ventanas pesadas, sin barras de titulo ni marcos molestos: solo tu video flotando limpiamente sobre tus aplicaciones, siempre visible mientras trabajas, grabas la pantalla o estas en llamada.
+La idea del proyecto es tener la camara en pantalla sin ventanas pesadas, sin barras de titulo ni marcos molestos: video flotando limpiamente sobre el resto de las aplicaciones, siempre visible durante grabaciones de pantalla, llamadas o transmisiones.
 
 ---
 
 ## Descarga directa (Windows)
 
-Si solo queres usar la aplicacion sin instalar nada:
+Para usar la aplicacion directamente sin instalar dependencias:
 
 👉 **[Descargar MaicolCam.exe](https://github.com/santiagojorda/maicol-cam/releases/latest/download/MaicolCam.exe)**
 
@@ -16,7 +16,7 @@ Si solo queres usar la aplicacion sin instalar nada:
 
 ---
 
-## Como usarla
+## Uso
 
 ### 1. Clonar el repositorio
 ```bash
@@ -34,13 +34,13 @@ pip install -r requirements.txt
 python webcam_float.py
 ```
 
-Tambien podes hacer doble clic en `run.bat` para abrirla directamente sin consola negra.
+Tambien se puede ejecutar `run.bat` para iniciar directamente sin consola.
 
 ---
 
 ## Compilar a .exe (Opcional)
 
-Si queres compilar tu propio ejecutable:
+Para compilar el ejecutable:
 
 ```bash
 pip install pyinstaller
