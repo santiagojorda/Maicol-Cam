@@ -334,7 +334,8 @@ class FloatingCamera(QWidget):
         return None
 
     def mousePressEvent(self, event):
-        if event.button() == Qt.MouseButton.MiddleButton or (event.button() == Qt.MouseButton.LeftButton and (event.modifiers() & Qt.KeyboardModifier.ControlModifier)):
+        # Mover encuadre con clic central
+        if event.button() == Qt.MouseButton.MiddleButton:
             self.panning = True
             self.pan_start_mouse = event.globalPosition().toPoint()
             self.pan_start_offset = (self.pan_offset_x, self.pan_offset_y)
@@ -413,22 +414,13 @@ class FloatingCamera(QWidget):
 
     def wheelEvent(self, event):
         delta = event.angleDelta().y()
-
-        if event.modifiers() & Qt.KeyboardModifier.ControlModifier:
-            if delta > 0:
-                self.zoom_factor = min(4.0, self.zoom_factor + 0.15)
-            else:
-                self.zoom_factor = max(1.0, self.zoom_factor - 0.15)
-            self.schedule_save()
-            event.accept()
-        else:
-            factor = 1.08 if delta > 0 else 0.92
-            aspect = self.height() / self.width()
-            new_w = max(160, min(1400, int(self.width() * factor)))
-            new_h = int(new_w * aspect)
-            self.resize(new_w, new_h)
-            self.schedule_save()
-            event.accept()
+        factor = 1.08 if delta > 0 else 0.92
+        aspect = self.height() / self.width()
+        new_w = max(160, min(1400, int(self.width() * factor)))
+        new_h = int(new_w * aspect)
+        self.resize(new_w, new_h)
+        self.schedule_save()
+        event.accept()
 
     def set_canvas_aspect(self, width, height, is_circle=False):
         self.is_circle = is_circle
@@ -509,6 +501,9 @@ class FloatingCamera(QWidget):
         zoom_menu.addAction("Zoom 1.5x", lambda: self.set_zoom(1.5))
         zoom_menu.addAction("Zoom 2.0x", lambda: self.set_zoom(2.0))
         zoom_menu.addAction("Zoom 3.0x", lambda: self.set_zoom(3.0))
+        zoom_menu.addSeparator()
+        zoom_menu.addAction("➕ Acercar zoom", lambda: self.set_zoom(min(4.0, self.zoom_factor + 0.25)))
+        zoom_menu.addAction("➖ Alejar zoom", lambda: self.set_zoom(max(1.0, self.zoom_factor - 0.25)))
         zoom_menu.addSeparator()
         zoom_menu.addAction("🎯 Centrar encuadre y resetear", self.reset_pan_zoom)
 
