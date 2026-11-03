@@ -6,6 +6,16 @@ La idea principal de este proyecto es tener tu cámara en pantalla **sin ventana
 
 ---
 
+## 📥 Descarga directa (Windows)
+
+Si solo quieres usar la aplicación sin instalar nada:
+
+👉 **[Descargar CamaraFlotante.exe v1.0.0](https://github.com/santiagojorda/camara-flotante/releases/download/v1.0.0/CamaraFlotante.exe)** *(87 MB)*
+
+*Auto-contenido: no requiere Python, Git ni dependencias adicionales. Descargar y abrir.*
+
+---
+
 ## ✨ Características
 
 - 🪟 **Diseño 100% minimalista:** sin bordes, sin barras de ventana y con esquinas redondeadas o modo circular.
