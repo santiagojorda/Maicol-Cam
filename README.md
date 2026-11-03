@@ -1,34 +1,22 @@
-# 📷 Cámara Flotante Minimalista
+# Camara Flotante Minimalista
 
-Una ventana flotante de cámara web **simple, ligera y sin bordes**. 
+Una ventana flotante de camara web simple, ligera y sin bordes.
 
-La idea principal de este proyecto es tener tu cámara en pantalla **sin ventanas pesadas, sin barras de título ni marcos molestos**: solo tu video flotando limpiamente sobre tus aplicaciones, siempre visible mientras trabajas, grabas la pantalla o estás en llamada.
-
----
-
-## 📥 Descarga directa (Windows)
-
-Si solo quieres usar la aplicación sin instalar nada:
-
-👉 **[Descargar CamaraFlotante.exe v1.0.0](https://github.com/santiagojorda/camara-flotante/releases/download/v1.0.0/CamaraFlotante.exe)** *(87 MB)*
-
-*Auto-contenido: no requiere Python, Git ni dependencias adicionales. Descargar y abrir.*
+La idea de este proyecto es tener tu camara en pantalla sin ventanas pesadas, sin barras de titulo ni marcos molestos: solo tu video flotando limpiamente sobre tus aplicaciones, siempre visible mientras trabajas, grabas la pantalla o estas en llamada.
 
 ---
 
-## ✨ Características
+## Descarga directa (Windows)
 
-- 🪟 **Diseño 100% minimalista:** sin bordes, sin barras de ventana y con esquinas redondeadas o modo circular.
-- 📌 **Siempre visible (Always on Top):** se mantiene por encima de cualquier programa o juego.
-- 🌟 **Calidad Full HD (1080p):** aprovecha el sensor de tu webcam a máxima resolución y con soporte para pantallas de alta densidad (High-DPI).
-- ✨ **Filtro de nitidez HD:** realce sutil de bordes para una imagen más nítida y limpia.
-- 📐 **Lienzo adaptable:** formatos predefinidos (Vertical 9:16 para Reels/TikTok, 3:4, Horizontal 16:9, Cuadrado 1:1 o Círculo).
-- 🔍 **Zoom y Encuadre digital:** haz zoom y reubica tu encuadre fácilmente sin mover la webcam física.
-- 💾 **Persistencia automática:** recuerda tu tamaño, posición en pantalla, zoom, cámara y ajustes entre cierres de forma 100% automática.
+Si solo queres usar la aplicacion sin instalar nada:
+
+👉 **[Descargar CamaraFlotante.exe](https://github.com/santiagojorda/camara-flotante/releases/latest/download/CamaraFlotante.exe)**
+
+*No requiere Python ni dependencias adicionales. Descargar y abrir.*
 
 ---
 
-## 🚀 Cómo usarla
+## Como usarla
 
 ### 1. Clonar el repositorio
 ```bash
@@ -46,55 +34,44 @@ pip install -r requirements.txt
 python webcam_float.py
 ```
 
-> **Tip:** También puedes ejecutarlo con `pythonw webcam_float.py` si no quieres que se abra ninguna ventana de consola negra.
+Tambien podes hacer doble clic en `run.bat` para abrirla directamente sin consola negra.
 
 ---
 
-## 🎮 Controles rápidos
+## Controles rapidos
 
-### 🖱️ Con el mouse
+### Mouse
 
-| Acción | Control |
+| Accion | Control |
 | :--- | :--- |
-| **Mover la ventana** | Arrastrar con clic izquierdo desde el centro |
-| **Cambiar tamaño libre** | Arrastrar los bordes derecho, inferior o esquina |
-| **Cambiar tamaño proporcional** | Rueda del mouse (Scroll) |
-| **Hacer Zoom** | <kbd>Ctrl</kbd> + Rueda del mouse |
-| **Mover el encuadre (Pan)** | Clic con la rueda central **o** <kbd>Ctrl</kbd> + Clic izquierdo y arrastrar |
-| **Restaurar zoom y encuadre** | Doble clic izquierdo |
-| **Menú de opciones completo** | Clic derecho |
+| Mover la ventana | Arrastrar con clic izquierdo |
+| Cambiar tamano libre | Arrastrar los bordes o esquina |
+| Cambiar tamano proporcional | Rueda del mouse (Scroll) |
+| Zoom | Ctrl + Rueda del mouse |
+| Mover el encuadre (Pan) | Clic central o Ctrl + Clic izquierdo y arrastrar |
+| Resetear zoom y encuadre | Doble clic izquierdo |
+| Menu de opciones | Clic derecho |
 
-### ⌨️ Con el teclado
+### Teclado
 
-| Tecla | Acción |
+| Tecla | Accion |
 | :--- | :--- |
-| <kbd>M</kbd> | Alternar modo espejo (invertir horizontalmente) |
-| <kbd>C</kbd> | Cambiar de cámara (0 / 1) |
-| <kbd>S</kbd> | Activar / Desactivar realce de nitidez HD |
-| <kbd>H</kbd> | Alternar entre 1080p y 720p |
-| <kbd>+</kbd> / <kbd>-</kbd> | Zoom in / Zoom out |
-| <kbd>Flechas</kbd> | Mover el encuadre (arriba, abajo, izquierda, derecha) |
-| <kbd>0</kbd> | Resetear zoom y encuadre al centro |
-| <kbd>Esc</kbd> | Cerrar la aplicación |
+| M | Alternar modo espejo |
+| C | Cambiar camara |
+| S | Activar o desactivar realce de nitidez HD |
+| H | Alternar entre 1080p y 720p |
+| + / - | Zoom in / Zoom out |
+| Flechas | Mover encuadre |
+| 0 | Resetear zoom y encuadre al centro |
+| Esc | Cerrar |
 
 ---
 
-## 📦 Compilar a ejecutable `.exe` (Opcional)
+## Compilar a .exe (Opcional)
 
-Si quieres tener un archivo `.exe` independiente que puedas abrir directamente sin instalar Python:
+Si queres compilar tu propio ejecutable:
 
 ```bash
 pip install pyinstaller
 pyinstaller --noconfirm --clean --onefile --noconsole --icon="webcam.ico" --name "CamaraFlotante" webcam_float.py
 ```
-
-El ejecutable quedará generado dentro de la carpeta `dist/`.
-
----
-
-## 🛠️ Tecnologías utilizadas
-
-- **Python 3.12+**
-- **PyQt6** (interfaz gráfica flotante y eventos)
-- **OpenCV (cv2)** (captura de video DirectShow en 1080p y transformaciones)
-- **NumPy**
