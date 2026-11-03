@@ -1,0 +1,18 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.env
+.venv/
+venv/
+
+# Build & Executables
+build/
+dist/
+*.spec
+*.exe
+
+# User config & cache
+camara_flotante_config.json
+.vscode/
+.idea/
