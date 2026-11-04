@@ -1,5 +1,9 @@
 # Maicol Cam
 
+<p align="center">
+  <img src="assets/logo_glace_rendered.png" width="160" alt="Maicol Cam Logo" />
+</p>
+
 Ventana flotante de camara web simple, ligera y sin bordes.
 
 La idea del proyecto es tener la camara en pantalla sin ventanas pesadas, sin barras de titulo ni marcos molestos: video flotando limpiamente sobre el resto de las aplicaciones, siempre visible durante grabaciones de pantalla, llamadas o transmisiones.

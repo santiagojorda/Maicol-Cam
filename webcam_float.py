@@ -12,7 +12,7 @@ if sys.stderr is None:
     sys.stderr = io.StringIO()
 
 from PyQt6.QtCore import Qt, QThread, pyqtSignal, QPoint, QRectF, QTimer
-from PyQt6.QtGui import QImage, QPainter, QPainterPath, QColor, QFont, QCursor
+from PyQt6.QtGui import QImage, QPainter, QPainterPath, QColor, QFont, QCursor, QIcon
 from PyQt6.QtWidgets import QApplication, QWidget, QMenu
 
 def get_config_path():
@@ -32,6 +32,29 @@ def load_config():
             return json.load(f)
     except Exception:
         return None
+
+def get_app_icon_path():
+    if getattr(sys, 'frozen', False):
+        meipass = getattr(sys, '_MEIPASS', '')
+        if meipass:
+            p = os.path.join(meipass, "webcam.ico")
+            if os.path.exists(p):
+                return p
+        exe_dir = os.path.dirname(sys.executable)
+        p = os.path.join(exe_dir, "webcam.ico")
+        if os.path.exists(p):
+            return p
+
+    script_dir = os.path.dirname(os.path.abspath(__file__))
+    p = os.path.join(script_dir, "webcam.ico")
+    if os.path.exists(p):
+        return p
+
+    p = os.path.join(os.path.expanduser("~"), "webcam.ico")
+    if os.path.exists(p):
+        return p
+
+    return ""
 
 class VideoCaptureThread(QThread):
     frame_ready = pyqtSignal(np.ndarray)
@@ -146,6 +169,9 @@ class FloatingCamera(QWidget):
         self.current_qimg = None
 
         self.setWindowTitle("Maicol Cam")
+        icon_path = get_app_icon_path()
+        if icon_path and os.path.exists(icon_path):
+            self.setWindowIcon(QIcon(icon_path))
 
         # Configuracion de ventana flotante sin bordes
         self.setWindowFlags(
@@ -578,7 +604,19 @@ def get_best_camera_index():
     return 0
 
 if __name__ == "__main__":
+    import ctypes
+    try:
+        myappid = 'santiagojorda.maicolcam.app.1.0'
+        ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID(myappid)
+    except Exception:
+        pass
+
     app = QApplication(sys.argv)
+    
+    icon_path = get_app_icon_path()
+    if icon_path and os.path.exists(icon_path):
+        app.setWindowIcon(QIcon(icon_path))
+
     cfg = load_config()
     if cfg is not None and "camera_index" in cfg:
         best_cam = cfg["camera_index"]
