@@ -34,25 +34,42 @@ def load_config():
         return None
 
 def get_app_icon_path():
-    if getattr(sys, 'frozen', False):
-        meipass = getattr(sys, '_MEIPASS', '')
+    candidates = []
+    if getattr(sys, "frozen", False):
+        meipass = getattr(sys, "_MEIPASS", "")
         if meipass:
-            p = os.path.join(meipass, "webcam.ico")
-            if os.path.exists(p):
-                return p
-        exe_dir = os.path.dirname(sys.executable)
-        p = os.path.join(exe_dir, "webcam.ico")
-        if os.path.exists(p):
-            return p
+            candidates.extend([
+                os.path.join(meipass, "assets", "maicol_cam.ico"),
+                os.path.join(meipass, "assets", "logo_glace_rendered.png"),
+                os.path.join(meipass, "maicol_cam.ico"),
+                os.path.join(meipass, "webcam.ico"),
+            ])
+        exe_dir = os.path.dirname(os.path.abspath(sys.executable))
+        candidates.extend([
+            os.path.join(exe_dir, "assets", "maicol_cam.ico"),
+            os.path.join(exe_dir, "assets", "logo_glace_rendered.png"),
+            os.path.join(exe_dir, "maicol_cam.ico"),
+            os.path.join(exe_dir, "webcam.ico"),
+        ])
 
-    script_dir = os.path.dirname(os.path.abspath(__file__))
-    p = os.path.join(script_dir, "webcam.ico")
-    if os.path.exists(p):
-        return p
+    base_dir = os.path.dirname(os.path.abspath(__file__))
+    candidates.extend([
+        os.path.join(base_dir, "assets", "maicol_cam.ico"),
+        os.path.join(base_dir, "assets", "logo_glace_rendered.png"),
+        os.path.join(base_dir, "maicol_cam.ico"),
+        os.path.join(base_dir, "webcam.ico"),
+    ])
 
-    p = os.path.join(os.path.expanduser("~"), "webcam.ico")
-    if os.path.exists(p):
-        return p
+    user_home = os.path.expanduser("~")
+    candidates.extend([
+        os.path.join(user_home, "assets", "maicol_cam.ico"),
+        os.path.join(user_home, "maicol_cam.ico"),
+        os.path.join(user_home, "webcam.ico"),
+    ])
+
+    for c in candidates:
+        if c and os.path.exists(c):
+            return c
 
     return ""
 
@@ -168,20 +185,11 @@ class FloatingCamera(QWidget):
 
         self.current_qimg = None
 
-        self.setWindowTitle("Maicol Cam")
-        icon_path = get_app_icon_path()
-        if icon_path and os.path.exists(icon_path):
-            self.setWindowIcon(QIcon(icon_path))
-
         # Configuracion de ventana flotante sin bordes
         self.always_on_top = bool(cfg.get("always_on_top", True))
         self.show_border = bool(cfg.get("show_border", False))
         self.mouse_over_pin = False
-        flags = Qt.WindowType.FramelessWindowHint
-        if self.always_on_top:
-            flags |= Qt.WindowType.WindowStaysOnTopHint
-        self.setWindowFlags(flags)
-        self.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground, True)
+        self.init_window_flags()
         self.setMouseTracking(True)
 
         # Restaurar tamano
@@ -573,12 +581,20 @@ class FloatingCamera(QWidget):
 
         menu.exec(global_pos)
 
-    def toggle_always_on_top(self):
-        self.always_on_top = not self.always_on_top
+    def init_window_flags(self):
         flags = Qt.WindowType.FramelessWindowHint
         if self.always_on_top:
             flags |= Qt.WindowType.WindowStaysOnTopHint
         self.setWindowFlags(flags)
+        self.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground, True)
+        self.setWindowTitle("Maicol Cam")
+        icon_path = get_app_icon_path()
+        if icon_path and os.path.exists(icon_path):
+            self.setWindowIcon(QIcon(icon_path))
+
+    def toggle_always_on_top(self):
+        self.always_on_top = not self.always_on_top
+        self.init_window_flags()
         self.show()
         self.save_config()
         self.update()
@@ -633,12 +649,13 @@ def get_best_camera_index():
 if __name__ == "__main__":
     import ctypes
     try:
-        myappid = 'santiagojorda.maicolcam.app.1.0'
+        myappid = 'santiagojorda.maicolcam.app.2.0'
         ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID(myappid)
     except Exception:
         pass
 
     app = QApplication(sys.argv)
+    app.setApplicationName("Maicol Cam")
     
     icon_path = get_app_icon_path()
     if icon_path and os.path.exists(icon_path):
@@ -650,6 +667,8 @@ if __name__ == "__main__":
     else:
         best_cam = get_best_camera_index()
     window = FloatingCamera(camera_index=best_cam, initial_config=cfg)
+    if icon_path and os.path.exists(icon_path):
+        window.setWindowIcon(QIcon(icon_path))
     window.show()
     window.raise_()
     window.activateWindow()
