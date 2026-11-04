@@ -174,10 +174,12 @@ class FloatingCamera(QWidget):
             self.setWindowIcon(QIcon(icon_path))
 
         # Configuracion de ventana flotante sin bordes
-        self.setWindowFlags(
-            Qt.WindowType.FramelessWindowHint |
-            Qt.WindowType.WindowStaysOnTopHint
-        )
+        self.always_on_top = bool(cfg.get("always_on_top", True))
+        self.mouse_over_pin = False
+        flags = Qt.WindowType.FramelessWindowHint
+        if self.always_on_top:
+            flags |= Qt.WindowType.WindowStaysOnTopHint
+        self.setWindowFlags(flags)
         self.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground, True)
         self.setMouseTracking(True)
 
@@ -237,6 +239,7 @@ class FloatingCamera(QWidget):
             "camera_index": int(self.camera_index),
             "target_res": [int(self.target_res[0]), int(self.target_res[1])],
             "sharpness_boost": bool(self.sharpness_boost),
+            "always_on_top": bool(self.always_on_top),
             "zoom_factor": float(round(self.zoom_factor, 2)),
             "pan_offset_x": int(self.pan_offset_x),
             "pan_offset_y": int(self.pan_offset_y),
@@ -555,11 +558,24 @@ class FloatingCamera(QWidget):
         mirror_action = menu.addAction(f"🔄 Modo espejo: {'Activado ✓' if self.mirror_mode else 'Desactivado'}")
         mirror_action.triggered.connect(self.toggle_mirror)
 
+        ontop_action = menu.addAction(f"📌 Fijar en todas las pantallas: {'Activado ✓' if self.always_on_top else 'En el escritorio'}")
+        ontop_action.triggered.connect(self.toggle_always_on_top)
+
         menu.addSeparator()
         close_action = menu.addAction("❌ Cerrar Maicol Cam")
         close_action.triggered.connect(self.close)
 
         menu.exec(global_pos)
+
+    def toggle_always_on_top(self):
+        self.always_on_top = not self.always_on_top
+        flags = Qt.WindowType.FramelessWindowHint
+        if self.always_on_top:
+            flags |= Qt.WindowType.WindowStaysOnTopHint
+        self.setWindowFlags(flags)
+        self.show()
+        self.save_config()
+        self.update()
 
     def set_zoom(self, zoom):
         self.zoom_factor = zoom
