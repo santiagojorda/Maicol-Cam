@@ -1,40 +1,58 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="100%" height="100%">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
   <defs>
     <!-- Background Gradient -->
     <linearGradient id="mintBg" x1="0%" y1="0%" x2="100%" y2="100%">
       <stop offset="0%" stop-color="#34DEC4"/>
-      <stop offset="100%" stop-color="#22C8AE"/>
+      <stop offset="100%" stop-color="#20C4AA"/>
     </linearGradient>
 
-    <!-- Frosted Glass Gradient -->
-    <linearGradient id="frostedGlass" x1="0%" y1="0%" x2="0%" y2="100%">
-      <stop offset="0%" stop-color="#FFFFFF" stop-opacity="0.84"/>
-      <stop offset="100%" stop-color="#FFFFFF" stop-opacity="0.42"/>
+    <!-- Outer Lens Ring Gradient -->
+    <linearGradient id="lensRing" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#FFFFFF" stop-opacity="0.55"/>
+      <stop offset="100%" stop-color="#FFFFFF" stop-opacity="0.25"/>
     </linearGradient>
 
-    <!-- Glass Border Gradient -->
-    <linearGradient id="glassBorder" x1="0%" y1="0%" x2="0%" y2="100%">
-      <stop offset="0%" stop-color="#FFFFFF" stop-opacity="0.95"/>
-      <stop offset="100%" stop-color="#FFFFFF" stop-opacity="0.5"/>
+    <!-- Inner Lens Core Gradient -->
+    <linearGradient id="lensCore" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#1DBDA4"/>
+      <stop offset="100%" stop-color="#0F7A6A"/>
     </linearGradient>
 
     <!-- Soft diffuse shadow -->
-    <filter id="softShadow" x="-25%" y="-20%" width="150%" height="150%">
-      <feDropShadow dx="0" dy="20" stdDeviation="24" flood-color="#0E5E52" flood-opacity="0.24"/>
+    <filter id="softShadow" x="-30%" y="-30%" width="160%" height="160%">
+      <feDropShadow dx="0" dy="16" stdDeviation="20" flood-color="#0B5247" flood-opacity="0.28"/>
+    </filter>
+
+    <!-- Flash glow -->
+    <filter id="flashGlow" x="-50%" y="-50%" width="200%" height="200%">
+      <feDropShadow dx="0" dy="6" stdDeviation="10" flood-color="#0B5247" flood-opacity="0.2"/>
     </filter>
   </defs>
 
-  <!-- Mint base background -->
+  <!-- Mint squircle background -->
   <rect width="512" height="512" rx="112" fill="url(#mintBg)"/>
 
-  <!-- Vertical Frosted Glass Floating Window (Narrower vertical portrait) -->
-  <rect x="116" y="44" width="280" height="424" rx="76" fill="url(#frostedGlass)" stroke="url(#glassBorder)" stroke-width="5.5" filter="url(#softShadow)"/>
+  <!-- Flash in Upper Right -->
+  <g filter="url(#flashGlow)">
+    <!-- Flash outer ring -->
+    <circle cx="380" cy="132" r="32" fill="#FFFFFF" fill-opacity="0.32" stroke="#FFFFFF" stroke-opacity="0.75" stroke-width="3"/>
+    <!-- Flash center bulb -->
+    <circle cx="380" cy="132" r="18" fill="#FFFFFF" fill-opacity="0.96"/>
+  </g>
 
-  <!-- Minimal Camera Lens -->
-  <circle cx="256" cy="246" r="82" fill="#FFFFFF" fill-opacity="0.45" stroke="#FFFFFF" stroke-opacity="0.8" stroke-width="4"/>
-  <circle cx="256" cy="246" r="38" fill="#2AD6BB"/>
-  <circle cx="269" cy="233" r="8.5" fill="#FFFFFF" fill-opacity="0.95"/>
+  <!-- Camera Lens -->
+  <g filter="url(#softShadow)">
+    <!-- Outer glass lens ring -->
+    <circle cx="256" cy="268" r="122" fill="url(#lensRing)" stroke="#FFFFFF" stroke-opacity="0.85" stroke-width="6"/>
+    
+    <!-- Secondary internal bezel -->
+    <circle cx="256" cy="268" r="92" fill="none" stroke="#FFFFFF" stroke-opacity="0.45" stroke-width="3"/>
 
-  <!-- Status indicator dot -->
-  <circle cx="358" cy="82" r="7.5" fill="#FFFFFF" fill-opacity="0.85"/>
+    <!-- Inner dark aperture core -->
+    <circle cx="256" cy="268" r="62" fill="url(#lensCore)"/>
+
+    <!-- Light reflection catchlights -->
+    <circle cx="278" cy="246" r="15" fill="#FFFFFF" fill-opacity="0.95"/>
+    <circle cx="236" cy="288" r="6" fill="#FFFFFF" fill-opacity="0.45"/>
+  </g>
 </svg>
