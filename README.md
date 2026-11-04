@@ -14,7 +14,7 @@ La idea del proyecto es tener la camara en pantalla sin ventanas pesadas, sin ba
 
 Para usar la aplicacion directamente sin instalar dependencias:
 
-👉 **[Descargar MaicolCam.exe](https://github.com/santiagojorda/maicol-cam/releases/latest/download/MaicolCam.exe)**
+👉 **[Descargar MaicolCam.exe](https://github.com/santiagojorda/Maicol-Cam/releases/latest/download/MaicolCam.exe)**
 
 *No requiere Python ni dependencias adicionales. Descargar y abrir.*
 
@@ -24,8 +24,8 @@ Para usar la aplicacion directamente sin instalar dependencias:
 
 ### 1. Clonar el repositorio
 ```bash
-git clone https://github.com/santiagojorda/maicol-cam.git
-cd maicol-cam
+git clone https://github.com/santiagojorda/Maicol-Cam.git
+cd Maicol-Cam
 ```
 
 ### 2. Instalar dependencias
