@@ -6,6 +6,10 @@ import pytest
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 import webcam_float
 
+def test_version_defined():
+    assert hasattr(webcam_float, "__version__")
+    assert webcam_float.__version__ == "1.1.0"
+
 def test_config_defaults(tmp_path, monkeypatch):
     test_cfg = tmp_path / "test_config.json"
     monkeypatch.setattr(webcam_float, "get_config_path", lambda: str(test_cfg))
@@ -70,3 +74,27 @@ def test_aspect_ratio_calculations():
         assert w > 0 and h > 0
         ratio = w / h
         assert 0.5 <= ratio <= 2.0
+
+def test_video_capture_thread_processing():
+    import numpy as np
+    from PyQt6.QtGui import QImage
+
+    thread = webcam_float.VideoCaptureThread()
+    thread.update_render_params(
+        win_w=300,
+        win_h=200,
+        dpr=1.0,
+        zoom_factor=1.0,
+        pan_offset_x=0,
+        pan_offset_y=0,
+        mirror_mode=True,
+        sharpness_boost=True
+    )
+
+    test_frame = np.zeros((720, 1280, 3), dtype=np.uint8)
+    qimg = thread._process_frame(test_frame)
+
+    assert isinstance(qimg, QImage)
+    assert not qimg.isNull()
+    assert qimg.width() == 300
+    assert qimg.height() == 200

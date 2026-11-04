@@ -5,6 +5,8 @@ import json
 import cv2
 import numpy as np
 
+__version__ = "1.1.0"
+
 # Asegurar compatibilidad al ejecutar con pythonw (sin consola)
 if sys.stdout is None:
     sys.stdout = io.StringIO()
@@ -74,10 +76,10 @@ def get_app_icon_path():
     return ""
 
 class VideoCaptureThread(QThread):
-    frame_ready = pyqtSignal(np.ndarray)
+    frame_ready = pyqtSignal(QImage)
     resolution_changed = pyqtSignal(int, int)
 
-    def __init__(self, camera_index=0, target_width=1920, target_height=1080):
+    def __init__(self, camera_index=0, target_width=1280, target_height=720):
         super().__init__()
         self.camera_index = camera_index
         self.target_width = target_width
@@ -85,6 +87,27 @@ class VideoCaptureThread(QThread):
         self._pending_camera = None
         self._pending_res = None
         self._run_flag = True
+        self._is_ready_for_frame = True
+
+        # Parametros de renderizado para procesamiento off-thread
+        self._render_params = {
+            "win_w": 320,
+            "win_h": 420,
+            "dpr": 1.0,
+            "zoom_factor": 1.0,
+            "pan_offset_x": 0,
+            "pan_offset_y": 0,
+            "mirror_mode": True,
+            "sharpness_boost": False,
+        }
+
+    def set_ready_for_frame(self):
+        self._is_ready_for_frame = True
+
+    def update_render_params(self, **kwargs):
+        params = dict(self._render_params)
+        params.update(kwargs)
+        self._render_params = params
 
     def set_camera(self, new_index):
         self._pending_camera = new_index
@@ -95,8 +118,10 @@ class VideoCaptureThread(QThread):
     def _open_camera(self):
         cap = cv2.VideoCapture(self.camera_index, cv2.CAP_DSHOW)
         if not cap.isOpened():
+            cap.release()
             cap = cv2.VideoCapture(self.camera_index)
         if not cap.isOpened():
+            cap.release()
             return None
 
         # Configurar MJPG: permite 1080p y 720p a altos FPS sin saturar el bus USB de Windows
@@ -111,8 +136,74 @@ class VideoCaptureThread(QThread):
         self.resolution_changed.emit(actual_w, actual_h)
         return cap
 
+    def _process_frame(self, frame):
+        try:
+            h, w, ch = frame.shape
+            params = self._render_params
+            win_w = max(60, params.get("win_w", 320))
+            win_h = max(60, params.get("win_h", 420))
+            dpr = float(params.get("dpr", 1.0))
+            phys_w = max(60, int(round(win_w * dpr)))
+            phys_h = max(60, int(round(win_h * dpr)))
+
+            target_aspect = win_w / win_h
+            current_aspect = w / h
+
+            # 1. Dimensiones base del lienzo de corte
+            if current_aspect > target_aspect:
+                base_h = h
+                base_w = int(h * target_aspect)
+            else:
+                base_w = w
+                base_h = int(w / target_aspect)
+
+            # 2. Aplicar factor de zoom a la zona de la camara
+            zoom = max(1.0, float(params.get("zoom_factor", 1.0)))
+            crop_w = max(20, min(w, int(base_w / zoom)))
+            crop_h = max(20, min(h, int(base_h / zoom)))
+
+            # 3. Posicion del encuadre (Pan)
+            center_x = (w - crop_w) // 2
+            center_y = (h - crop_h) // 2
+
+            pan_x = params.get("pan_offset_x", 0)
+            pan_y = params.get("pan_offset_y", 0)
+            mirror_mode = params.get("mirror_mode", True)
+
+            if mirror_mode:
+                crop_x = int(np.clip(center_x + pan_x, 0, w - crop_w))
+                start_x = w - (crop_x + crop_w)
+            else:
+                start_x = int(np.clip(center_x + pan_x, 0, w - crop_w))
+
+            start_y = int(np.clip(center_y + pan_y, 0, h - crop_h))
+
+            # 4. Extraer zona
+            cropped = frame[start_y:start_y + crop_h, start_x:start_x + crop_w]
+
+            # 5. Escalar usando INTER_LINEAR (mucho mas veloz y eficiente para tiempo real)
+            resized = cv2.resize(cropped, (phys_w, phys_h), interpolation=cv2.INTER_LINEAR)
+
+            # 6. Realce de nitidez HD optimizado
+            if params.get("sharpness_boost", False):
+                blurred = cv2.GaussianBlur(resized, (0, 0), 1.0)
+                resized = cv2.addWeighted(resized, 1.25, blurred, -0.25, 0)
+
+            # 7. Volteo espejo
+            if mirror_mode:
+                resized = cv2.flip(resized, 1)
+
+            # 8. QImage nativo con DPR asignado
+            bytes_per_line = ch * phys_w
+            qimg = QImage(resized.data, phys_w, phys_h, bytes_per_line, QImage.Format.Format_BGR888).copy()
+            qimg.setDevicePixelRatio(dpr)
+            return qimg
+        except Exception:
+            return None
+
     def run(self):
         cap = self._open_camera()
+        consecutive_failures = 0
 
         while self._run_flag:
             reopen_needed = False
@@ -130,15 +221,31 @@ class VideoCaptureThread(QThread):
                 if cap is not None:
                     cap.release()
                 cap = self._open_camera()
+                consecutive_failures = 0
 
             if cap is not None and cap.isOpened():
                 ret, frame = cap.read()
                 if ret and frame is not None:
-                    self.frame_ready.emit(frame)
+                    consecutive_failures = 0
+                    if self._is_ready_for_frame:
+                        self._is_ready_for_frame = False
+                        qimg = self._process_frame(frame)
+                        if qimg is not None:
+                            self.frame_ready.emit(qimg)
                 else:
-                    self.msleep(15)
+                    consecutive_failures += 1
+                    # Si falla por ~2s, intentar reconexion automatica
+                    if consecutive_failures >= 60:
+                        if cap is not None:
+                            cap.release()
+                        self.msleep(1000)
+                        cap = self._open_camera()
+                        consecutive_failures = 0
+                    else:
+                        self.msleep(15)
             else:
-                self.msleep(100)
+                self.msleep(1000)
+                cap = self._open_camera()
 
         if cap is not None:
             cap.release()
@@ -158,9 +265,9 @@ class FloatingCamera(QWidget):
         self.is_circle = cfg.get("is_circle", False)
         self.mirror_mode = cfg.get("mirror_mode", True)
         self.camera_index = cfg.get("camera_index", camera_index)
-        self.target_res = tuple(cfg.get("target_res", [1920, 1080]))
+        self.target_res = tuple(cfg.get("target_res", [1280, 720]))
         self.actual_res = self.target_res
-        self.sharpness_boost = cfg.get("sharpness_boost", True)
+        self.sharpness_boost = cfg.get("sharpness_boost", False)
 
         # Zoom y Encuadre (Zona de la camara)
         self.zoom_factor = float(cfg.get("zoom_factor", 1.0))
@@ -196,11 +303,13 @@ class FloatingCamera(QWidget):
         init_w = int(cfg.get("width", width))
         init_h = int(cfg.get("height", height))
         self.resize(init_w, init_h)
+        self._cached_clip_path = None
+        self._update_clip_path()
 
         # Restaurar o calcular posicion en pantalla
         self._setup_initial_position(cfg, init_w, init_h)
 
-        # Iniciar captura de video en Full HD 1080p
+        # Iniciar captura de video
         self.thread = VideoCaptureThread(
             camera_index=self.camera_index,
             target_width=self.target_res[0],
@@ -208,6 +317,7 @@ class FloatingCamera(QWidget):
         )
         self.thread.frame_ready.connect(self.on_new_frame)
         self.thread.resolution_changed.connect(self.on_resolution_changed)
+        self._sync_thread_params()
         self.thread.start()
 
     def _setup_initial_position(self, cfg, w, h):
@@ -224,10 +334,14 @@ class FloatingCamera(QWidget):
                 self.move(saved_x, saved_y)
                 return
 
-        screen = QApplication.primaryScreen().availableGeometry()
-        pos_x = max(20, screen.right() - w - 40)
-        pos_y = max(20, screen.bottom() - h - 60)
-        self.move(pos_x, pos_y)
+        primary = QApplication.primaryScreen()
+        if primary is not None:
+            screen = primary.availableGeometry()
+            pos_x = max(20, screen.right() - w - 40)
+            pos_y = max(20, screen.bottom() - h - 60)
+            self.move(pos_x, pos_y)
+        else:
+            self.move(100, 100)
 
     def schedule_save(self):
         if hasattr(self, 'save_timer'):
@@ -261,76 +375,44 @@ class FloatingCamera(QWidget):
         except Exception:
             pass
 
+    def _update_clip_path(self):
+        w, h = float(self.width()), float(self.height())
+        radius = float(min(w, h) / 2.0) if self.is_circle else float(self.corner_radius)
+        path = QPainterPath()
+        path.addRoundedRect(QRectF(0.0, 0.0, w, h), radius, radius)
+        self._cached_clip_path = path
+
+    def _sync_thread_params(self):
+        if hasattr(self, 'thread') and self.thread is not None:
+            win_w = max(60, self.width())
+            win_h = max(60, self.height())
+            dpr = float(self.devicePixelRatio())
+            self.thread.update_render_params(
+                win_w=win_w,
+                win_h=win_h,
+                dpr=dpr,
+                zoom_factor=self.zoom_factor,
+                pan_offset_x=self.pan_offset_x,
+                pan_offset_y=self.pan_offset_y,
+                mirror_mode=self.mirror_mode,
+                sharpness_boost=self.sharpness_boost,
+            )
+
     def resizeEvent(self, event):
         super().resizeEvent(event)
+        self._update_clip_path()
+        self._sync_thread_params()
         self.schedule_save()
 
     def moveEvent(self, event):
         super().moveEvent(event)
+        self._sync_thread_params()
         self.schedule_save()
 
     def on_resolution_changed(self, w, h):
         self.actual_res = (w, h)
 
-    def on_new_frame(self, frame):
-        h, w, ch = frame.shape
-
-        win_w, win_h = max(60, self.width()), max(60, self.height())
-        dpr = float(self.devicePixelRatio())
-        phys_w = max(60, int(round(win_w * dpr)))
-        phys_h = max(60, int(round(win_h * dpr)))
-
-        target_aspect = win_w / win_h
-        current_aspect = w / h
-
-        # 1. Dimensiones base del lienzo de corte
-        if current_aspect > target_aspect:
-            base_h = h
-            base_w = int(h * target_aspect)
-        else:
-            base_w = w
-            base_h = int(w / target_aspect)
-
-        # 2. Aplicar factor de zoom a la zona de la camara
-        crop_w = max(20, min(w, int(base_w / self.zoom_factor)))
-        crop_h = max(20, min(h, int(base_h / self.zoom_factor)))
-
-        # 3. Posicion del encuadre (Pan)
-        center_x = (w - crop_w) // 2
-        center_y = (h - crop_h) // 2
-
-        if self.mirror_mode:
-            crop_x = int(np.clip(center_x + self.pan_offset_x, 0, w - crop_w))
-            start_x = w - (crop_x + crop_w)
-        else:
-            start_x = int(np.clip(center_x + self.pan_offset_x, 0, w - crop_w))
-
-        start_y = int(np.clip(center_y + self.pan_offset_y, 0, h - crop_h))
-
-        # 4. Extraer zona
-        cropped = frame[start_y:start_y + crop_h, start_x:start_x + crop_w]
-
-        # 5. Escalar al tamano de renderizado fisico
-        if phys_w <= crop_w and phys_h <= crop_h:
-            interp = cv2.INTER_AREA
-        else:
-            interp = cv2.INTER_LINEAR
-
-        resized = cv2.resize(cropped, (phys_w, phys_h), interpolation=interp)
-
-        # 6. Realce de nitidez HD
-        if self.sharpness_boost:
-            blurred = cv2.GaussianBlur(resized, (0, 0), 1.5)
-            resized = cv2.addWeighted(resized, 1.25, blurred, -0.25, 0)
-
-        # 7. Volteo espejo
-        if self.mirror_mode:
-            resized = cv2.flip(resized, 1)
-
-        # 8. QImage nativo con DPR asignado
-        bytes_per_line = ch * phys_w
-        qimg = QImage(resized.data, phys_w, phys_h, bytes_per_line, QImage.Format.Format_BGR888).copy()
-        qimg.setDevicePixelRatio(dpr)
+    def on_new_frame(self, qimg):
         self.current_qimg = qimg
         self.update()
 
@@ -339,17 +421,18 @@ class FloatingCamera(QWidget):
         painter.setRenderHint(QPainter.RenderHint.Antialiasing)
         painter.setRenderHint(QPainter.RenderHint.SmoothPixmapTransform)
 
+        if not hasattr(self, '_cached_clip_path') or self._cached_clip_path is None:
+            self._update_clip_path()
+
+        painter.setClipPath(self._cached_clip_path)
+
         w, h = float(self.width()), float(self.height())
         radius = float(min(w, h) / 2.0) if self.is_circle else float(self.corner_radius)
-
-        path = QPainterPath()
-        path.addRoundedRect(QRectF(0.0, 0.0, w, h), radius, radius)
-        painter.setClipPath(path)
 
         if self.current_qimg is not None:
             painter.drawImage(0, 0, self.current_qimg)
         else:
-            painter.fillPath(path, QColor(25, 27, 34, 240))
+            painter.fillPath(self._cached_clip_path, QColor(25, 27, 34, 240))
             painter.setPen(QColor(220, 220, 225))
             painter.setFont(QFont("Segoe UI", 11))
             painter.drawText(0, 0, int(w), int(h), Qt.AlignmentFlag.AlignCenter, "Conectando Maicol Cam...")
@@ -365,6 +448,8 @@ class FloatingCamera(QWidget):
                 painter.drawLine(int(w - 7), int(h - 4), int(w - 4), int(h - 7))
 
         painter.end()
+        if hasattr(self, 'thread') and self.thread is not None:
+            self.thread.set_ready_for_frame()
 
     def get_resize_zone(self, pos):
         w, h = self.width(), self.height()
@@ -410,6 +495,7 @@ class FloatingCamera(QWidget):
             dy = delta.y()
             self.pan_offset_x = self.pan_start_offset[0] + int(dx * 1.5)
             self.pan_offset_y = self.pan_start_offset[1] + int(dy * 1.5)
+            self._sync_thread_params()
             self.schedule_save()
             event.accept()
             return
@@ -465,12 +551,15 @@ class FloatingCamera(QWidget):
         new_w = max(160, min(1400, int(self.width() * factor)))
         new_h = int(new_w * aspect)
         self.resize(new_w, new_h)
+        self._sync_thread_params()
         self.schedule_save()
         event.accept()
 
     def set_canvas_aspect(self, width, height, is_circle=False):
         self.is_circle = is_circle
         self.resize(width, height)
+        self._update_clip_path()
+        self._sync_thread_params()
         self.update()
         self.save_config()
 
@@ -483,6 +572,7 @@ class FloatingCamera(QWidget):
 
     def toggle_sharpness(self):
         self.sharpness_boost = not self.sharpness_boost
+        self._sync_thread_params()
         self.save_config()
 
     def show_context_menu(self, global_pos):
@@ -606,17 +696,20 @@ class FloatingCamera(QWidget):
 
     def set_zoom(self, zoom):
         self.zoom_factor = zoom
+        self._sync_thread_params()
         self.save_config()
 
     def reset_pan_zoom(self):
         self.zoom_factor = 1.0
         self.pan_offset_x = 0
         self.pan_offset_y = 0
+        self._sync_thread_params()
         self.save_config()
 
     def set_rounding_mode(self, radius=28, circle=False):
         self.is_circle = circle
         self.corner_radius = radius
+        self._update_clip_path()
         self.update()
         self.save_config()
 
@@ -629,6 +722,7 @@ class FloatingCamera(QWidget):
 
     def toggle_mirror(self):
         self.mirror_mode = not self.mirror_mode
+        self._sync_thread_params()
         self.save_config()
 
     def closeEvent(self, event):
@@ -647,6 +741,8 @@ def get_best_camera_index():
     return 0
 
 if __name__ == "__main__":
+    import multiprocessing
+    multiprocessing.freeze_support()
     import ctypes
     try:
         myappid = 'santiagojorda.maicolcam.app.2.0'
