@@ -175,6 +175,7 @@ class FloatingCamera(QWidget):
 
         # Configuracion de ventana flotante sin bordes
         self.always_on_top = bool(cfg.get("always_on_top", True))
+        self.show_border = bool(cfg.get("show_border", False))
         self.mouse_over_pin = False
         flags = Qt.WindowType.FramelessWindowHint
         if self.always_on_top:
@@ -240,6 +241,7 @@ class FloatingCamera(QWidget):
             "target_res": [int(self.target_res[0]), int(self.target_res[1])],
             "sharpness_boost": bool(self.sharpness_boost),
             "always_on_top": bool(self.always_on_top),
+            "show_border": bool(self.show_border),
             "zoom_factor": float(round(self.zoom_factor, 2)),
             "pan_offset_x": int(self.pan_offset_x),
             "pan_offset_y": int(self.pan_offset_y),
@@ -345,13 +347,14 @@ class FloatingCamera(QWidget):
             painter.drawText(0, 0, int(w), int(h), Qt.AlignmentFlag.AlignCenter, "Conectando Maicol Cam...")
 
         painter.setClipping(False)
-        painter.setPen(QColor(255, 255, 255, 60))
-        painter.drawRoundedRect(QRectF(0.75, 0.75, w - 1.5, h - 1.5), radius, radius)
+        if self.show_border:
+            painter.setPen(QColor(255, 255, 255, 60))
+            painter.drawRoundedRect(QRectF(0.75, 0.75, w - 1.5, h - 1.5), radius, radius)
 
-        if not self.is_circle:
-            painter.setPen(QColor(255, 255, 255, 80))
-            painter.drawLine(int(w - 12), int(h - 4), int(w - 4), int(h - 12))
-            painter.drawLine(int(w - 7), int(h - 4), int(w - 4), int(h - 7))
+            if not self.is_circle:
+                painter.setPen(QColor(255, 255, 255, 80))
+                painter.drawLine(int(w - 12), int(h - 4), int(w - 4), int(h - 12))
+                painter.drawLine(int(w - 7), int(h - 4), int(w - 4), int(h - 7))
 
         painter.end()
 
@@ -561,6 +564,9 @@ class FloatingCamera(QWidget):
         ontop_action = menu.addAction(f"📌 Fijar siempre arriba: {'Activado ✓' if self.always_on_top else 'Desactivado'}")
         ontop_action.triggered.connect(self.toggle_always_on_top)
 
+        border_action = menu.addAction(f"🖼️ Marco exterior: {'Activado ✓' if self.show_border else 'Desactivado'}")
+        border_action.triggered.connect(self.toggle_border)
+
         menu.addSeparator()
         close_action = menu.addAction("❌ Cerrar Maicol Cam")
         close_action.triggered.connect(self.close)
@@ -574,6 +580,11 @@ class FloatingCamera(QWidget):
             flags |= Qt.WindowType.WindowStaysOnTopHint
         self.setWindowFlags(flags)
         self.show()
+        self.save_config()
+        self.update()
+
+    def toggle_border(self):
+        self.show_border = not self.show_border
         self.save_config()
         self.update()
 

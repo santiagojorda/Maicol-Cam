@@ -25,6 +25,7 @@ def test_config_save_and_load(tmp_path, monkeypatch):
         "is_circle": False,
         "corner_radius": 28,
         "always_on_top": True,
+        "show_border": False,
         "mirror_mode": False,
         "zoom_factor": 1.25,
         "pan_offset_x": 0,
@@ -38,6 +39,7 @@ def test_config_save_and_load(tmp_path, monkeypatch):
     assert loaded["width"] == 320
     assert loaded["corner_radius"] == 28
     assert loaded["always_on_top"] is True
+    assert loaded["show_border"] is False
 
 def test_app_icon_exists():
     icon_path = webcam_float.get_app_icon_path()
