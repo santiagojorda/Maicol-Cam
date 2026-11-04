@@ -558,7 +558,7 @@ class FloatingCamera(QWidget):
         mirror_action = menu.addAction(f"🔄 Modo espejo: {'Activado ✓' if self.mirror_mode else 'Desactivado'}")
         mirror_action.triggered.connect(self.toggle_mirror)
 
-        ontop_action = menu.addAction(f"📌 Fijar en todas las pantallas: {'Activado ✓' if self.always_on_top else 'En el escritorio'}")
+        ontop_action = menu.addAction(f"📌 Fijar siempre arriba: {'Activado ✓' if self.always_on_top else 'Desactivado'}")
         ontop_action.triggered.connect(self.toggle_always_on_top)
 
         menu.addSeparator()
